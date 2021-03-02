@@ -52,7 +52,7 @@ class WidgetHelper {
       _widgets: (state = {}, action) => {
         const { id } = action.meta || {};
 
-        if (action.type === "_UPDATE") {
+        if (action.type === "_INIT_WIDGET") {
           const newState = {
             ...state,
             [id]: action.payload
@@ -88,14 +88,13 @@ class WidgetHelper {
     const id = `${getCompName(Component)}-${createId()}`;
     this.reducers[id] = combineReducers(reducers);
 
-    console.log("!!!!", state);
     if (!this.isClient) {
       this.initialState[id] = getInitialState(currentProps);
       this.components[id] = { Component, currentProps };
     } else if (!(state && state._widgets && state._widgets[id])) {
       resolveObj(getInitialState(currentProps)).then((res) => {
         dispatch({
-          type: "_UPDATE",
+          type: "_INIT_WIDGET",
           payload: res,
           meta: { id }
         });
