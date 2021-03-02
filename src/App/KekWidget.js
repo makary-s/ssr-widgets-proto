@@ -32,7 +32,7 @@ const getInitialState = (props) => ({ num: resolveRandomNumber() });
 /////////////////////////////////////////////////
 
 const Kek = ({ num, name }) => {
-  const add = useAction(KekWidget, addAction);
+  const add = useAction(addAction);
 
   return (
     <button

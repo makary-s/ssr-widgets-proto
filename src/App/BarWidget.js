@@ -31,7 +31,7 @@ const getInitialState = (props) => ({ num: resolveRandomNumber() });
 /////////////////////////////////////////////////
 
 const Bar = ({ num, name }) => {
-  const sub = useAction(BarWidget, subAction);
+  const sub = useAction(subAction);
 
   return (
     <button

@@ -61,6 +61,8 @@ class WidgetHelper {
     this.widetsStateClientPromises = {};
     this.waitPath = "/init_widgets";
     this.serverWaiter = this.serverWaiter.bind(this);
+
+    this.temp = {};
   }
 
   getReducers() {
@@ -214,7 +216,7 @@ class WidgetHelper {
           state
         });
 
-        Widget.getInfo = () => ({ id: _id, isClient: this.isClient });
+        widgetHelper.temp.getId = () => _id;
 
         return _id;
       }, []);
@@ -273,15 +275,22 @@ class WidgetHelper {
   }
 }
 
-export default new WidgetHelper();
+const widgetHelper = new WidgetHelper();
 
-export const useAction = (Widget, actionCreator, deps = []) => {
-  const { id, isClient } = Widget.getInfo();
+export default widgetHelper;
+
+export const useAction = (actionCreator, deps = []) => {
+  // TODO опасненько
+  const id = widgetHelper.temp.getId();
+  const isClient = widgetHelper.isClient;
 
   if (!isClient) return;
 
+  console.log(")2", id);
+
   // eslint-disable-next-line react-hooks/rules-of-hooks
   const dispatch = useDispatch();
+
   const callback = (...args) => {
     // TODO мета уже может быть задана
     const result = { ...actionCreator(...args), meta: { id } };

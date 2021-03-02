@@ -30,7 +30,7 @@ const getInitialState = (props) => ({ num: resolveRandomNumber() });
 /////////////////////////////////////////////////
 
 const Foo = ({ num, name }) => {
-  const add = useAction(FooWidget, addAction);
+  const add = useAction(addAction);
 
   return <button onClick={add}>{`${name}-${num}`}</button>;
 };
