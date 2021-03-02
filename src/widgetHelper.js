@@ -25,20 +25,41 @@ const checkIsClient = () => {
   }
 };
 
+const resolveObj = (obj) => {
+  const result = {};
+  const promises = [];
+
+  promises.push(
+    ...Object.entries(obj).map(async ([key, val]) => {
+      result[key] = await val;
+    })
+  );
+
+  return Promise.all(promises).then(() => result);
+};
+
 class WidgetHelper {
   constructor() {
     this.reducers = {};
     this.initialState = {};
     this.components = {};
+    this.inited = new Set();
     this.isClient = checkIsClient();
   }
 
   getReducers() {
     return {
       _widgets: (state = {}, action) => {
-        const { meta: id } = action;
+        const { id } = action.meta || {};
 
-        console.log(state, action, this.reducers);
+        if (action.type === "_UPDATE") {
+          const newState = {
+            ...state,
+            [id]: action.payload
+          };
+
+          return newState;
+        }
 
         const widgetReducers = this.reducers[id];
         if (!widgetReducers) return state;
@@ -56,13 +77,29 @@ class WidgetHelper {
     };
   }
 
-  getId({ Component, currentProps, getInitialState, reducers }) {
+  getId({
+    Component,
+    currentProps,
+    getInitialState,
+    reducers,
+    state,
+    dispatch
+  }) {
     const id = `${getCompName(Component)}-${createId()}`;
     this.reducers[id] = combineReducers(reducers);
 
+    console.log("!!!!", state);
     if (!this.isClient) {
       this.initialState[id] = getInitialState(currentProps);
       this.components[id] = { Component, currentProps };
+    } else if (!(state && state._widgets && state._widgets[id])) {
+      resolveObj(getInitialState(currentProps)).then((res) => {
+        dispatch({
+          type: "_UPDATE",
+          payload: res,
+          meta: { id }
+        });
+      });
     }
 
     return id;
@@ -90,7 +127,6 @@ class WidgetHelper {
 
   async prepareRenderData(app, state) {
     const html = renderToString(app);
-    console.log(html);
 
     const initialState = {
       ...state,
@@ -113,8 +149,6 @@ class WidgetHelper {
       }
     );
 
-    console.log(finalHtml);
-
     // Очищаем чтобы не накапливалось
     idCount = 0;
     this.initialState = {};
@@ -126,24 +160,25 @@ class WidgetHelper {
 
   create({ Component, getInitialState = () => ({}), reducers }) {
     const Widget = (props) => {
+      const state = useSelector((state) => state);
+      const dispatch = useDispatch();
+
       const id = useMemo(() => {
         const _id = this.getId({
           Component,
           currentProps: props,
           getInitialState,
-          reducers
+          reducers,
+          dispatch,
+          state
         });
-
-        console.log(_id, "??");
 
         Widget.getInfo = () => ({ id: _id, isClient: this.isClient });
 
         return _id;
       }, []);
 
-      const widgetState = useSelector(
-        (state) => state && state._widgets && state._widgets[id]
-      );
+      const widgetState = state && state._widgets && state._widgets[id];
 
       return this.isClient
         ? Component({ ...widgetState, ...props })
@@ -167,7 +202,7 @@ export const useAction = (Widget, actionCreator, deps = []) => {
   const dispatch = useDispatch();
   const callback = (...args) => {
     // TODO мета уже может быть задана
-    const result = { ...actionCreator(...args), meta: id };
+    const result = { ...actionCreator(...args), meta: { id } };
     if (!result) return;
 
     dispatch(result);

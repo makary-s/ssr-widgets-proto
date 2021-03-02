@@ -17,7 +17,7 @@ const addAction = () => ({
 /////////////////////////////////////////////////
 
 const reducers = {
-  num: (state = 1, { type }) => {
+  num: (state = -100, { type }) => {
     switch (type) {
       case "ADD": {
         return ++state;
