@@ -4,7 +4,7 @@ import BarWidget from "./BarWidget";
 import KekWidget from "./KekWidget";
 
 const AppBase = () => {
-  const [Comp, setComp] = useState(null);
+  const [Comps, setComp] = useState(null);
   useEffect(() => {
     setTimeout(() => {
       setComp([
@@ -27,10 +27,10 @@ const AppBase = () => {
       <BarWidget name="bar-a" />
       {false ? <BarWidget name="bar-c" /> : null}
       {false ? <KekWidget name="kek-a" /> : null}
-      {/* Компоненты отрендарятся через пару секунд в useEffect */}
+      {/* Компоненты Comp отрендарятся через пару секунд в useEffect */}
       {/* нет isBlocking и не было отрендерено на сервере - 
       резульат срезолвится на клиенте */}
-      {Comp}
+      {Comps}
     </>
   );
 };

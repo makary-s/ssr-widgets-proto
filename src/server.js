@@ -28,6 +28,7 @@ server.get("/", async (req, res) => {
   );
 });
 
+// вернет начальные стейты неблокирующих отрендеренных виджетов
 server.get(WidgetHelper.waitPath, WidgetHelper.serverWaiter);
 
 server.listen(8080, () => {
