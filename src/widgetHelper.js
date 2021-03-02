@@ -9,7 +9,7 @@ const getCompName = (comp) => comp.name || comp.displayName;
 let idCount = 0;
 const createId = () => ++idCount;
 
-const Placeholder = ({ id }) => (
+const SsrPlaceholder = ({ id }) => (
   <div id={id} data-widget>
     {id}
   </div>
@@ -157,7 +157,7 @@ class WidgetHelper {
     return { html: finalHtml, initialState };
   }
 
-  create({ Component, getInitialState = () => ({}), reducers }) {
+  create({ Component, Placeholder, getInitialState = () => ({}), reducers }) {
     const Widget = (props) => {
       const state = useSelector((state) => state);
       const dispatch = useDispatch();
@@ -179,9 +179,13 @@ class WidgetHelper {
 
       const widgetState = state && state._widgets && state._widgets[id];
 
-      return this.isClient
-        ? Component({ ...widgetState, ...props })
-        : Placeholder({ id, ...props });
+      if (this.isClient) {
+        const result = Component({ ...widgetState, ...props });
+        if (!widgetState && Placeholder) return Placeholder(props);
+        return result;
+      }
+
+      return SsrPlaceholder({ id, ...props });
     };
 
     Widget.displayName = getCompName(Component);

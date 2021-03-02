@@ -7,7 +7,7 @@ const AppBase = () => {
   const [Comp, setComp] = useState(null);
   useEffect(() => {
     setTimeout(() => {
-      setComp(<KekWidget name="world6" />);
+      setComp([<BarWidget name="world6" />, <KekWidget name="world7" />]);
     }, 2000);
   });
 

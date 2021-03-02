@@ -38,7 +38,12 @@ const getInitialState = (props) => ({ num: resolveRandomNumber() });
 const Bar = ({ num, name }) => {
   const sub = useAction(BarWidget, subAction);
 
-  return <button onClick={sub}>{`${name}-${num}`}</button>;
+  return (
+    <button
+      onClick={sub}
+      style={{ background: "lightGrey" }}
+    >{`${name}-${num}`}</button>
+  );
 };
 
 const BarWidget = WidgetHelper.create({
