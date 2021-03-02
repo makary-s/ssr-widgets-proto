@@ -286,8 +286,6 @@ export const useAction = (actionCreator, deps = []) => {
 
   if (!isClient) return;
 
-  console.log(")2", id);
-
   // eslint-disable-next-line react-hooks/rules-of-hooks
   const dispatch = useDispatch();
 
