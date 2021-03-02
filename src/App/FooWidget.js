@@ -1,12 +1,6 @@
 import React from "react";
 import WidgetHelper, { useAction } from "../widgetHelper";
-
-/////////////////////////////////////////////////
-
-const resolveRandomNumber = () =>
-  new Promise((resolve) =>
-    setTimeout(() => resolve(Math.round(Math.random() * 100)), 1000)
-  );
+import { resolveRandomNumber } from "../resolvers";
 
 /////////////////////////////////////////////////
 

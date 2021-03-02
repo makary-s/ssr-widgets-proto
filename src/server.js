@@ -10,7 +10,7 @@ const server = express();
 
 server.use("/assets", express.static(join(__dirname, "assets")));
 
-server.get("/", async (_, res) => {
+server.get("/", async (req, res) => {
   const store = createStore({});
 
   const { html, initialState } = await WidgetHelper.prepareRenderData(
@@ -20,7 +20,6 @@ server.get("/", async (_, res) => {
 
   // eslint-disable-next-line no-console
   console.log("Server initial state:\n", initialState);
-
   res.send(
     renderTemplate({
       html,
@@ -28,6 +27,8 @@ server.get("/", async (_, res) => {
     })
   );
 });
+
+server.get(WidgetHelper.waitPath, WidgetHelper.serverWaiter);
 
 server.listen(8080, () => {
   // eslint-disable-next-line no-console

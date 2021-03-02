@@ -25,6 +25,17 @@ const checkIsClient = () => {
   }
 };
 
+const getWidgetState = (state, id) =>
+  state && state._widgets && state._widgets[id];
+
+const renderComp = ({ Component, Placeholder, state, props, id }) => {
+  const widgetState = getWidgetState(state, id);
+  const result = Component({ ...(widgetState || {}), ...props });
+
+  if (!widgetState && Placeholder) return Placeholder(props);
+  return result;
+};
+
 const resolveObj = (obj) => {
   const result = {};
   const promises = [];
@@ -45,6 +56,11 @@ class WidgetHelper {
     this.components = {};
     this.inited = new Set();
     this.isClient = checkIsClient();
+
+    // надо поедлить по запросам чтобы не пересекалось
+    this.widetsStateClientPromises = {};
+    this.waitPath = "/init_widgets";
+    this.serverWaiter = this.serverWaiter.bind(this);
   }
 
   getReducers() {
@@ -77,8 +93,10 @@ class WidgetHelper {
     };
   }
 
+  // TODO нейминг; костыльно
   getId({
     Component,
+    Placeholder,
     currentProps,
     getInitialState,
     reducers,
@@ -90,15 +108,19 @@ class WidgetHelper {
 
     if (!this.isClient) {
       this.initialState[id] = getInitialState(currentProps);
-      this.components[id] = { Component, currentProps };
-    } else if (!(state && state._widgets && state._widgets[id])) {
-      resolveObj(getInitialState(currentProps)).then((res) => {
-        dispatch({
-          type: "_INIT_WIDGET",
-          payload: res,
-          meta: { id }
+      this.components[id] = { Component, currentProps, Placeholder };
+    } else {
+      const widgetState = getWidgetState(state, id);
+      // TODO вмесо null статус; null - значит ждем ответ с сервера
+      if (!widgetState && widgetState !== null) {
+        resolveObj(getInitialState(currentProps)).then((res) => {
+          dispatch({
+            type: "_INIT_WIDGET",
+            payload: res,
+            meta: { id }
+          });
         });
-      });
+      }
     }
 
     return id;
@@ -107,30 +129,42 @@ class WidgetHelper {
   // TODO сделать рекурсивной
   async getState() {
     const result = {};
-    const promises = [];
+    const clientPromises = [];
+    const blockingPromises = [];
 
     for (const [id, initialState] of Object.entries(this.initialState)) {
-      promises.push(
-        ...Object.entries(initialState).map(async ([key, val]) => {
-          if (!result[id]) result[id] = {};
+      // TODO детектим блокирующие компоненты
 
-          result[id][key] = await val;
-        })
-      );
+      if (this.components[id].currentProps.$isBlocking) {
+        blockingPromises.push(
+          ...Object.entries(initialState).map(async ([key, val]) => {
+            if (!result[id]) result[id] = {};
+
+            result[id][key] = await val;
+          })
+        );
+      } else {
+        // TODO нужно чтобы компонент дождался ответа с сервера после рендера; придумать нормальный статус
+        result[id] = null;
+
+        clientPromises.push({ id, initialState });
+      }
     }
 
-    await Promise.all(promises);
+    await Promise.all(blockingPromises);
 
-    return result;
+    return { widgetsState: result, widetsStateClientPromises: clientPromises };
   }
 
   async prepareRenderData(app, state) {
     const html = renderToString(app);
 
+    const { widgetsState, widetsStateClientPromises } = await this.getState();
+
     const initialState = {
       ...state,
       // порядок важен
-      _widgets: await this.getState()
+      _widgets: widgetsState
     };
 
     const finalHtml = html.replace(
@@ -138,12 +172,16 @@ class WidgetHelper {
       (sel) => {
         const id = sel.match(/id="([^"]*)"/)[1];
 
-        const { Component, currentProps } = this.components[id];
-        const widgetState =
-          (initialState._widgets && initialState._widgets[id]) || {};
+        const { Component, Placeholder, currentProps } = this.components[id];
 
         return renderToString(
-          <Component {...{ ...widgetState, ...currentProps }} />
+          renderComp({
+            Component,
+            Placeholder,
+            id,
+            state: initialState,
+            props: currentProps
+          })
         );
       }
     );
@@ -153,6 +191,9 @@ class WidgetHelper {
     this.initialState = {};
     this.components = {};
     this.reducers = {};
+
+    // TODO разделить на запросы
+    this.widetsStateClientPromises = widetsStateClientPromises;
 
     return { html: finalHtml, initialState };
   }
@@ -165,6 +206,7 @@ class WidgetHelper {
       const id = useMemo(() => {
         const _id = this.getId({
           Component,
+          Placeholder,
           currentProps: props,
           getInitialState,
           reducers,
@@ -177,12 +219,8 @@ class WidgetHelper {
         return _id;
       }, []);
 
-      const widgetState = state && state._widgets && state._widgets[id];
-
       if (this.isClient) {
-        const result = Component({ ...widgetState, ...props });
-        if (!widgetState && Placeholder) return Placeholder(props);
-        return result;
+        return renderComp({ Component, Placeholder, state, props, id });
       }
 
       return SsrPlaceholder({ id, ...props });
@@ -191,6 +229,47 @@ class WidgetHelper {
     Widget.displayName = getCompName(Component);
 
     return Widget;
+  }
+
+  waitForStates(store) {
+    const source = new EventSource(this.waitPath);
+    let closed = false;
+    source.onmessage = (e) => {
+      if (e.data === "CLOSE") {
+        closed = true;
+        source.close();
+      }
+      // TODO<4234f> почему-то не закрывается
+      if (closed) return;
+
+      const { id, state } = JSON.parse(e.data);
+      store.dispatch({ type: "_INIT_WIDGET", payload: state, meta: { id } });
+    };
+  }
+
+  async serverWaiter(req, res) {
+    res.writeHead(200, {
+      "Content-Type": "text/event-stream",
+      "Cache-Control": "no-cache",
+      Connection: "keep-alive"
+    });
+
+    await Promise.all(
+      this.widetsStateClientPromises.map(async ({ id, initialState }) => {
+        const result = {};
+        await Promise.all(
+          Object.entries(initialState).map(async ([key, val]) => {
+            result[key] = await val;
+          })
+        ).then(() => {
+          res.write(`data: ${JSON.stringify({ id, state: result })}\n\n`);
+        });
+      })
+    );
+
+    res.write(`data: CLOSE\n\n`);
+
+    res.end();
   }
 }
 

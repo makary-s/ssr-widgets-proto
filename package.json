@@ -1,5 +1,5 @@
 {
-  "name": "example-server-side-rendering",
+  "name": "ssr-widgets-proto",
   "version": "1.0.0",
   "private": true,
   "license": "MIT",
@@ -32,5 +32,7 @@
     "react-redux": "7.2.2",
     "redux": "4.0.5",
     "redux-devtools-extension": "2.13.8"
-  }
+  },
+  "keywords": [],
+  "description": ""
 }

@@ -1,12 +1,7 @@
 import React from "react";
 import WidgetHelper, { useAction } from "../widgetHelper";
-
-/////////////////////////////////////////////////
-
-const resolveRandomNumber = () =>
-  new Promise((resolve) =>
-    setTimeout(() => resolve(Math.round(Math.random() * 100)), 1000)
-  );
+import { resolveRandomNumber } from "../resolvers";
+import Placeholder from "./Placeholder";
 
 /////////////////////////////////////////////////
 
@@ -48,6 +43,7 @@ const Bar = ({ num, name }) => {
 
 const BarWidget = WidgetHelper.create({
   Component: Bar,
+  Placeholder: ({ name }) => <Placeholder name={name} />,
   getInitialState,
   reducers
 });

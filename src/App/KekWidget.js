@@ -1,12 +1,8 @@
-import React, { useState, useEffect } from "react";
+import React from "react";
 import WidgetHelper, { useAction } from "../widgetHelper";
+import { resolveRandomNumber } from "../resolvers";
 
-/////////////////////////////////////////////////
-
-const resolveRandomNumber = () =>
-  new Promise((resolve) =>
-    setTimeout(() => resolve(Math.round(Math.random() * 100)), 1000)
-  );
+import Placeholder from "./Placeholder";
 
 /////////////////////////////////////////////////
 
@@ -46,11 +42,9 @@ const Kek = ({ num, name }) => {
   );
 };
 
-const KekPlaceholder = ({ name }) => <span>{`Loading ${name}...`}</span>;
-
 const KekWidget = WidgetHelper.create({
   Component: Kek,
-  Placeholder: KekPlaceholder,
+  Placeholder: ({ name }) => <Placeholder name={name} />,
   getInitialState,
   reducers
 });
