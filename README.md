@@ -58,12 +58,12 @@ return <button onClick={onClick}/>
 На сервере:
 
 ```js
-server.get("/", async (req, res) => {
-  ...
-  // получаем финальные html и стейт
-    <App store={store} isClient={false} />,
-    store.getState()
-  );
+// получаем финальные html и стейт
+const { html, initialState } = await WidgetHelper.prepareRenderData(
+  // TODO isClient не нужен
+  <App store={store} isClient={false} />,
+  store.getState()
+);
 ```
 
 ```js
