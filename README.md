@@ -1,5 +1,7 @@
 # Использование
 
+### Создание:
+
 ```js
 
 const Foo = (propsAndState) => ...
@@ -17,6 +19,8 @@ const FooWidget = WidgetHelper.create({
 });
 ```
 
+### Блокирование и получение стейта:
+
 ```js
 // isBlocking - сервер не вернет рендер
 // пока не будет срезолвен стейт этого компонента
@@ -32,6 +36,8 @@ const FooWidget = WidgetHelper.create({
 {isVisible ? <FooWidget name="foo-b" /> : null}
 ```
 
+### Хуки:
+
 ```js
 import { useAction } from "../widgetHelper";
 
@@ -40,6 +46,10 @@ import { useAction } from "../widgetHelper";
 const onClick = useAction(sctionCreator);
 return <button onClick={onClick}/>
 ```
+
+### Режим изолированного рендера виджета:
+
+Если добавить квери параметр `sw` то страница отрендерится с ссылками на изолированный просмотр виджетов.
 
 # Настройка
 
@@ -64,7 +74,12 @@ server.get(WidgetHelper.waitPath, WidgetHelper.serverWaiter);
 ```js
 // наблюдаем за Server-Sent Events, которые обновят неблокирущие отрендеренные виджеты,
 // стейт которых начал резолиться во время запроса к странице
-WidgetHelper.waitForStates(store);
+WidgetHelper.prepareClient(store);
+```
+
+```js
+// В пропсе wsModeCom будет лежать компонент если мы находимся в режиме рендера одного виджета
+render(WidgetHelper.wsModeCom, document.getElementById("root"));
 ```
 
 # TODO
@@ -72,5 +87,7 @@ WidgetHelper.waitForStates(store);
 - [ ] добавить эпики
 
 - [ ] код widgetHelper ужасен
-- [ ] просмисы в getInitialState будут резолвиться только в корне обьекта
+- [ ] просмисы в getInitialState будут резолвиться только в корне объекта
 - [ ] ответ из запросов widetsStateClientPromises может пересекаться
+- [ ] сделать обработку вложенных виджетов рекурсивной
+- [ ] инжект подписей-ссылок с именами виджитов - расхождение с ssr и ворнинг

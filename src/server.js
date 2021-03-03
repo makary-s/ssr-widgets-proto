@@ -14,6 +14,7 @@ server.get("/", async (req, res) => {
   const store = createStore({});
 
   const { html, initialState } = await WidgetHelper.prepareRenderData(
+    // TODO isClient не нужен
     <App store={store} isClient={false} />,
     store.getState()
   );
@@ -26,6 +27,10 @@ server.get("/", async (req, res) => {
       initialState
     })
   );
+});
+
+server.get(WidgetHelper.wsModePath, async (req, res) => {
+  res.send(renderTemplate());
 });
 
 // вернет начальные стейты неблокирующих отрендеренных виджетов

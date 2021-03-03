@@ -4,6 +4,7 @@ import BarWidget from "./BarWidget";
 import KekWidget from "./KekWidget";
 
 const AppBase = () => {
+  console.log(111);
   const [Comps, setComp] = useState(null);
   useEffect(() => {
     setTimeout(() => {
@@ -12,7 +13,7 @@ const AppBase = () => {
         <KekWidget name="kek-b" key="7" />
       ]);
     }, 0);
-  });
+  }, []);
 
   return (
     <>

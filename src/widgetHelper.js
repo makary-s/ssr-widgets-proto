@@ -1,5 +1,5 @@
-import React, { useCallback, useMemo } from "react";
-import { useSelector, useDispatch } from "react-redux";
+import React, { useCallback, useMemo, useRef } from "react";
+import { useSelector, useDispatch, Provider } from "react-redux";
 import { combineReducers } from "redux";
 import { renderToString } from "react-dom/server";
 
@@ -28,11 +28,41 @@ const checkIsClient = () => {
 const getWidgetState = (state, id) =>
   state && state._widgets && state._widgets[id];
 
-const renderComp = ({ Component, Placeholder, state, props, id }) => {
+const renderComp = ({ Component, Placeholder, state, props, id, ref }) => {
   const widgetState = getWidgetState(state, id);
-  const result = Component({ ...(widgetState || {}), ...props });
+  // рендерим в любом случае, хак для хуков
+  let result = Component({ ...(widgetState || {}), ...props, ref });
 
-  if (!widgetState && Placeholder) return Placeholder(props);
+  if (!widgetState && Placeholder) result = Placeholder(props);
+
+  if (checkIsClient() && window.location.search.match(/\Wsw(\W|$)/)) {
+    return (
+      <div
+        style={{ display: "inline-block", position: "relative" }}
+        data-id={id}
+        onClick={() => console.log(id)}
+      >
+        <a
+          style={{
+            position: "absolute",
+            display: "inline-block",
+            top: 0,
+            left: 0,
+            fontSize: "12px",
+            background: "red",
+            padding: "2px"
+          }}
+          href={`/widget?name=${getCompName(Component)}&props=${JSON.stringify(
+            props
+          )}`}
+        >
+          +{getCompName(Component)}
+        </a>
+        {result}
+      </div>
+    );
+  }
+
   return result;
 };
 
@@ -60,9 +90,11 @@ class WidgetHelper {
     // надо поедлить по запросам чтобы не пересекалось
     this.widetsStateClientPromises = {};
     this.waitPath = "/init_widgets";
+    this.wsModePath = "/widget";
     this.serverWaiter = this.serverWaiter.bind(this);
 
     this.temp = {};
+    this.witgets = {};
   }
 
   getReducers() {
@@ -110,7 +142,12 @@ class WidgetHelper {
 
     if (!this.isClient) {
       this.initialState[id] = getInitialState(currentProps);
-      this.components[id] = { Component, currentProps, Placeholder };
+      this.components[id] = {
+        name: getCompName(Component),
+        Component,
+        currentProps,
+        Placeholder
+      };
     } else {
       const widgetState = getWidgetState(state, id);
       // TODO вмесо null статус; null - значит ждем ответ с сервера
@@ -204,6 +241,7 @@ class WidgetHelper {
     const Widget = (props) => {
       const state = useSelector((state) => state);
       const dispatch = useDispatch();
+      const ref = useRef();
 
       const id = useMemo(() => {
         const _id = this.getId({
@@ -222,18 +260,40 @@ class WidgetHelper {
       }, []);
 
       if (this.isClient) {
-        return renderComp({ Component, Placeholder, state, props, id });
+        return renderComp({ Component, Placeholder, state, props, id, ref });
       }
 
       return SsrPlaceholder({ id, ...props });
     };
 
     Widget.displayName = getCompName(Component);
+    this.witgets[getCompName(Component)] = Widget;
 
     return Widget;
   }
 
-  waitForStates(store) {
+  prepareClient(store) {
+    this.wsModeCom = null;
+    if (window.location.pathname === this.wsModePath) {
+      const qparams = new URLSearchParams(window.location.search);
+
+      let props = {};
+      try {
+        props = JSON.parse(qparams.get("props"));
+        if (!props || typeof props !== "object") props = {};
+      } catch {}
+
+      const Comp = this.witgets[qparams.get("name")];
+
+      if (Comp)
+        this.wsModeCom = (
+          <Provider store={store}>
+            <Comp {...props} />
+          </Provider>
+        );
+    }
+
+    /////
     const source = new EventSource(this.waitPath);
     let closed = false;
     source.onmessage = (e) => {

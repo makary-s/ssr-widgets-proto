@@ -1,4 +1,4 @@
-export default ({ html, initialState }) =>
+export default ({ html = "", initialState = {} } = {}) =>
   `
 <!doctype html>
 <html>
