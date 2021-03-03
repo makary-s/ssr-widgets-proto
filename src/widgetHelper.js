@@ -40,7 +40,6 @@ const renderComp = ({ Component, Placeholder, state, props, id, ref }) => {
       <div
         style={{ display: "inline-block", position: "relative" }}
         data-id={id}
-        onClick={() => console.log(id)}
       >
         <a
           style={{

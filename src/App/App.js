@@ -4,7 +4,6 @@ import BarWidget from "./BarWidget";
 import KekWidget from "./KekWidget";
 
 const AppBase = () => {
-  console.log(111);
   const [Comps, setComp] = useState(null);
   useEffect(() => {
     setTimeout(() => {

@@ -29,7 +29,6 @@ const getInitialState = (props) => ({ num: resolveRandomNumber() });
 
 /////////////////////////////////////////////////
 
-console.log("8888");
 const Foo = ({ num, name }) => {
   const add = useAction(addAction);
 
