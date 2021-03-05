@@ -57,12 +57,6 @@ const FooWidget = WidgetHelper.create({
 const clickAction = () => ({ type: CLICK });
 const logAction = () => ({ type: LOG });
 
-const Widget = WidgetHelper.create({
-  Component: function Button() {
-    return () => <button onClick={dispatch(clickAction())} />;
-  }
-});
-
 const clickEpic = (action$) => action$.pipe(ofType(CLICK), mapTo(logAction()));
 
 const logEpic = (action$) =>
@@ -71,6 +65,15 @@ const logEpic = (action$) =>
     tap(({ meta: { id } }) => console.log(id)), // здесь появится id экземпляра виджета
     ignoreElements()
   );
+
+const Widget = WidgetHelper.create({
+  Component: function Button() {
+    const onClick = useAction(clickAction);
+
+    return <button onClick={onClick)} />;
+  },
+  epics: [clickEpic, logEpic]
+});
 ```
 
 ### Хуки:
