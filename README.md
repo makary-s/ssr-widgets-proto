@@ -39,7 +39,7 @@ const FooWidget = WidgetHelper.create({
 <FooWidget />
 ```
 
-Это не распространяется на виджиты, которые не попали в начальный рендер страницы. Из стейт будет срезолвен на клиенте.
+Это не распространяется на виджиты, которые не попали в начальный рендер страницы. Их стейт будет срезолвен на клиенте.
 
 ```js
 // isVisible === false
@@ -50,17 +50,16 @@ const FooWidget = WidgetHelper.create({
 
 ### Эпики:
 
-Эпики автоматически добавляют в экшн meta.id, если его нет. Поэтому результат работы эпика не повлияет на остальные экземпляры виджета.
+Эпики автоматически добавляют в экшн `meta.id`, если его нет. Поэтому результат работы эпика не повлияет на остальные экземпляры виджета.
 Пример:
 
 ```js
-const logAction = () => ({
-  type: LOG
-});
+const clickAction = () => ({ type: CLICK });
+const logAction = () => ({ type: LOG });
 
 const Widget = WidgetHelper.create({
   Component: function Button() {
-    return () => <button onClick={dispatch(logAction())} />;
+    return () => <button onClick={dispatch(clickAction())} />;
   }
 });
 
@@ -69,14 +68,14 @@ const clickEpic = (action$) => action$.pipe(ofType(CLICK), mapTo(logAction()));
 const logEpic = (action$) =>
   action$.pipe(
     ofType(LOG),
-    tap(({ meta: { id } }) => console.log(id)), // -> Button-1
+    tap(({ meta: { id } }) => console.log(id)), // здесь появится id экземпляра виджета
     ignoreElements()
   );
 ```
 
 ### Хуки:
 
-useAction автоматически просавляет meta.id в экшн. Поэтому после диспатча он попадет только в редьюсер данного экземпляра виджета.
+useAction автоматически просавляет `meta.id` в экшн. Поэтому после диспатча он попадет только в редьюсер данного экземпляра виджета.
 
 ```js
 import { useAction } from "../widgetHelper";
