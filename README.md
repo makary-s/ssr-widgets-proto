@@ -42,9 +42,8 @@ const FooWidget = WidgetHelper.create({
 Это не распространяется на виджиты, которые не попали в начальный рендер страницы. Их стейт будет срезолвен на клиенте.
 
 ```js
-// isVisible === false
 {
-  isVisible ? <FooWidget /> : null;
+  isVisible ? <FooWidget /> : null; // isVisible === false
 }
 ```
 
@@ -137,7 +136,6 @@ render(WidgetHelper.wsModeCom, document.getElementById("root"));
 
 ```js
 const { html, initialState } = await WidgetHelper.prepareRenderData(
-  // TODO isClient не нужен
   <App store={store} isClient={false} />,
   store.getState()
 );
