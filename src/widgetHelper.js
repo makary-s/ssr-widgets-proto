@@ -2,6 +2,9 @@ import React, { useCallback, useMemo, useRef } from "react";
 import { useSelector, useDispatch, Provider } from "react-redux";
 import { combineReducers } from "redux";
 import { renderToString } from "react-dom/server";
+import { combineEpics } from "redux-observable";
+import { map, mergeMap } from "rxjs/operators";
+import { of, EMPTY } from "rxjs";
 
 const getCompName = (comp) => comp.name || comp.displayName;
 
@@ -81,6 +84,8 @@ const resolveObj = (obj) => {
 class WidgetHelper {
   constructor() {
     this.reducers = {};
+    this.epics = {};
+
     this.initialState = {};
     this.components = {};
     this.inited = new Set();
@@ -126,27 +131,55 @@ class WidgetHelper {
     };
   }
 
+  getEpic() {
+    const epic = (action$, state$) =>
+      action$.pipe(
+        mergeMap((action, state) => {
+          const id = action.meta && action.meta.id;
+          if (!id) return EMPTY;
+
+          const { name: widgetName } = this.components[id] || {};
+          const widgetEpic = this.epics[widgetName];
+          if (!widgetEpic) return EMPTY;
+
+          return widgetEpic(of(action), state$).pipe(
+            map((x) =>
+              x && x.type && !(x.meta && x.meta.id)
+                ? { ...x, meta: { ...x.meta, id } }
+                : x
+            )
+          );
+        })
+      );
+
+    return epic;
+  }
+
   // TODO нейминг; костыльно
   getId({
+    name,
     Component,
     Placeholder,
     currentProps,
     getInitialState,
     reducers,
+    epics,
     state,
     dispatch
   }) {
-    const id = `${getCompName(Component)}-${createId()}`;
-    this.reducers[id] = combineReducers(reducers);
+    const id = `${name}-${createId()}`;
+
+    this.components[id] = {
+      name,
+      Component,
+      currentProps,
+      Placeholder
+    };
+
+    if (reducers) this.reducers[id] = combineReducers(reducers);
 
     if (!this.isClient) {
       this.initialState[id] = getInitialState(currentProps);
-      this.components[id] = {
-        name: getCompName(Component),
-        Component,
-        currentProps,
-        Placeholder
-      };
     } else {
       const widgetState = getWidgetState(state, id);
       // TODO вмесо null статус; null - значит ждем ответ с сервера
@@ -172,7 +205,6 @@ class WidgetHelper {
 
     for (const [id, initialState] of Object.entries(this.initialState)) {
       // TODO детектим блокирующие компоненты
-
       if (this.components[id].currentProps.$isBlocking) {
         blockingPromises.push(
           ...Object.entries(initialState).map(async ([key, val]) => {
@@ -236,7 +268,17 @@ class WidgetHelper {
     return { html: finalHtml, initialState };
   }
 
-  create({ Component, Placeholder, getInitialState = () => ({}), reducers }) {
+  create({
+    Component,
+    Placeholder,
+    getInitialState = () => ({}),
+    reducers,
+    epics
+  }) {
+    const name = getCompName(Component);
+
+    if (epics) this.epics[name] = combineEpics(...epics);
+
     const Widget = (props) => {
       const state = useSelector((state) => state);
       const dispatch = useDispatch();
@@ -244,11 +286,13 @@ class WidgetHelper {
 
       const id = useMemo(() => {
         const _id = this.getId({
+          name,
           Component,
           Placeholder,
           currentProps: props,
           getInitialState,
           reducers,
+          epics,
           dispatch,
           state
         });
@@ -265,8 +309,8 @@ class WidgetHelper {
       return SsrPlaceholder({ id, ...props });
     };
 
-    Widget.displayName = getCompName(Component);
-    this.witgets[getCompName(Component)] = Widget;
+    Widget.displayName = name;
+    this.witgets[name] = Widget;
 
     return Widget;
   }
@@ -338,12 +382,18 @@ const widgetHelper = new WidgetHelper();
 
 export default widgetHelper;
 
+export const useWidgetId = () => {
+  if (!widgetHelper.isClient) return;
+
+  // eslint-disable-next-line react-hooks/rules-of-hooks
+  return useMemo(() => widgetHelper.temp.getId(), []);
+};
+
 export const useAction = (actionCreator, deps = []) => {
   // TODO опасненько
   const id = widgetHelper.temp.getId();
-  const isClient = widgetHelper.isClient;
 
-  if (!isClient) return;
+  if (!widgetHelper.isClient) return;
 
   // eslint-disable-next-line react-hooks/rules-of-hooks
   const dispatch = useDispatch();

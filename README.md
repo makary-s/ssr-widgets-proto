@@ -17,7 +17,9 @@ const FooWidget = WidgetHelper.create({
   // Функция возвращающая начальный стей (на клиента или сервере)
   getInitialState,
   // редьюсеры
-  reducers
+  reducers,
+  // эпики
+  epics,
 });
 ```
 
@@ -38,15 +40,52 @@ const FooWidget = WidgetHelper.create({
 {isVisible ? <FooWidget name="foo-b" /> : null}
 ```
 
+### Эпики:
+
+Эпики автоматически добавляют в экшн meta.id, если его нет. Поэтому результат работы эпика не повлияет на остальные экземпляры виджета.
+Пример:
+
+```js
+const logAction = () => ({
+  type: LOG
+});
+
+const Widget = WidgetHelper.create({
+  Component: function Button() {
+    return () => <button onClick={dispatch(logAction())} />;
+  }
+});
+
+const clickEpic = (action$) => action$.pipe(ofType(CLICK), mapTo(logAction()));
+
+const logEpic = (action$) =>
+  action$.pipe(
+    ofType(LOG),
+    tap(({ meta: { id } }) => console.log(id)), // -> Button-1
+    ignoreElements()
+  );
+```
+
 ### Хуки:
+
+useAction автоматически просавляет meta.id в экшн. Поэтому после диспатча он попадет только в редьюсер данного экземпляра виджета.
 
 ```js
 import { useAction } from "../widgetHelper";
-
 ...
 // хук диспачащий акшены для экземпляра виджета
 const onClick = useAction(sctionCreator);
 return <button onClick={onClick}/>
+```
+
+Id виджета так же можно получить напрямую с помощью хука useWidgetId:
+
+```js
+import { useWidgetId } from "../widgetHelper";
+...
+// хук диспачащий акшены для экземпляра виджета
+const widgetId = useWidgetId()
+return <button onClick={() => dispatch(actionCreator(widgetId))}/>
 ```
 
 ### Режим изолированного рендера виджета:
@@ -55,10 +94,37 @@ return <button onClick={onClick}/>
 
 # Настройка
 
-На сервере:
+## На клиенте:
+
+Подключаем редьюсер виджетов:
 
 ```js
-// получаем финальные html и стейт
+combineReducers({ ...reducers, ...WidgetHelper.getReducers() });
+```
+
+Подключаем эпик виджетов:
+
+```js
+combineEpics(...epics, WidgetHelper.getEpic());
+```
+
+Наблюдаем за Server-Sent Events, которые обновят неблокирущие отрендеренные виджеты, стейт которых начал резолиться во время запроса к странице:
+
+```js
+WidgetHelper.prepareClient(store);
+```
+
+В пропсе wsModeCom будет лежать компонент если мы находимся в режиме изолировванного рендера виджета:
+
+```js
+render(WidgetHelper.wsModeCom, document.getElementById("root"));
+```
+
+## На сервере:
+
+Получаем финальные html и стейт:
+
+```js
 const { html, initialState } = await WidgetHelper.prepareRenderData(
   // TODO isClient не нужен
   <App store={store} isClient={false} />,
@@ -66,22 +132,10 @@ const { html, initialState } = await WidgetHelper.prepareRenderData(
 );
 ```
 
+Подключаем Server-Sent Events, которые вернут начальные стейты неблокирующих отрендеренных виджетов:
+
 ```js
-// Server-Sent Events которые вернут начальные стейты неблокирующих отрендеренных виджетов
 server.get(WidgetHelper.waitPath, WidgetHelper.serverWaiter);
-```
-
-На клиенте:
-
-```js
-// наблюдаем за Server-Sent Events, которые обновят неблокирущие отрендеренные виджеты,
-// стейт которых начал резолиться во время запроса к странице
-WidgetHelper.prepareClient(store);
-```
-
-```js
-// В пропсе wsModeCom будет лежать компонент если мы находимся в режиме рендера одного виджета
-render(WidgetHelper.wsModeCom, document.getElementById("root"));
 ```
 
 # TODO

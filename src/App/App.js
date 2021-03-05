@@ -6,12 +6,11 @@ import KekWidget from "./KekWidget";
 const AppBase = () => {
   const [Comps, setComp] = useState(null);
   useEffect(() => {
-    setTimeout(() => {
-      setComp([
-        <BarWidget name="bar-b" key="6" />,
-        <KekWidget name="kek-b" key="7" />
-      ]);
-    }, 0);
+    setComp([
+      <BarWidget name="bar-b" key="6" />,
+      <KekWidget name="kek-b" key="7" />,
+      <KekWidget name="kek-b" key="8" />
+    ]);
   }, []);
 
   return (
@@ -25,12 +24,12 @@ const AppBase = () => {
       {/* FooWidget не исеет плейхолдера - до загрузки стейта он будет отрендерен с пустым стейтом */}
       <FooWidget name="foo-b" />
       <BarWidget name="bar-a" />
-      {false ? <BarWidget name="bar-c" /> : null}
-      {false ? <KekWidget name="kek-a" /> : null}
-      {/* Компоненты Comp отрендарятся через пару секунд в useEffect */}
+      {/* Компоненты Comp отрендарятся в useEffect */}
       {/* нет isBlocking и не было отрендерено на сервере - 
       резульат срезолвится на клиенте */}
       {Comps}
+      {false ? <BarWidget name="bar-c" /> : null}
+      {false ? <KekWidget name="kek-a" /> : null}
     </>
   );
 };
