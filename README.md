@@ -114,7 +114,7 @@ combineEpics(...epics, WidgetHelper.getEpic());
 WidgetHelper.prepareClient(store);
 ```
 
-В пропсе wsModeCom будет лежать компонент если мы находимся в режиме изолировванного рендера виджета:
+В пропсе wsModeCom будет лежать компонент если мы находимся в режиме изолированного рендера виджета:
 
 ```js
 render(WidgetHelper.wsModeCom, document.getElementById("root"));
@@ -136,6 +136,12 @@ const { html, initialState } = await WidgetHelper.prepareRenderData(
 
 ```js
 server.get(WidgetHelper.waitPath, WidgetHelper.serverWaiter);
+```
+
+В пропсе WidgetHelper.wsModePath хранится адрес, на который будут указывать сссылки в режиме изолированного рендера.
+
+```js
+server.get(WidgetHelper.wsModePath, async (req, res) => ...
 ```
 
 # TODO
