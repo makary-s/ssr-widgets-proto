@@ -30,13 +30,13 @@ const FooWidget = WidgetHelper.create({
 Аттрибут `$isBlocking` означает, что сервер не вернет рендер пока не будет срезолвен стейт этого компонента:
 
 ```js
-<FooWidget name="foo-a" $isBlocking />
+<FooWidget $isBlocking />
 ```
 
 Без этого аттрибута стейт тоже начнет сразу же резолвится еще на сервере, но это не будет блокировать загрузку страницы. Клиент получит данные, как только они будут готовы.
 
 ```js
-<FooWidget name="foo-b" />
+<FooWidget />
 ```
 
 Это не распространяется на виджиты, которые не попали в начальный рендер страницы. Из стейт будет срезолвен на клиенте.
@@ -44,7 +44,7 @@ const FooWidget = WidgetHelper.create({
 ```js
 // isVisible === false
 {
-  isVisible ? <FooWidget name="foo-b" /> : null;
+  isVisible ? <FooWidget /> : null;
 }
 ```
 
