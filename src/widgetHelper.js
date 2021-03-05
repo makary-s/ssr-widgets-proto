@@ -1,4 +1,4 @@
-import React, { useCallback, useMemo, useRef } from "react";
+import React, { useCallback, useMemo, useRef, useEffect } from "react";
 import { useSelector, useDispatch, Provider } from "react-redux";
 import { combineReducers } from "redux";
 import { renderToString } from "react-dom/server";
@@ -316,7 +316,7 @@ class WidgetHelper {
   }
 
   prepareClient(store) {
-    this.wsModeCom = null;
+    this.wsModeComponent = null;
     if (window.location.pathname === this.wsModePath) {
       const qparams = new URLSearchParams(window.location.search);
 
@@ -329,7 +329,7 @@ class WidgetHelper {
       const Comp = this.witgets[qparams.get("name")];
 
       if (Comp)
-        this.wsModeCom = (
+        this.wsModeComponent = (
           <Provider store={store}>
             <Comp {...props} />
           </Provider>
