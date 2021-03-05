@@ -149,7 +149,7 @@ const { html, initialState } = await WidgetHelper.prepareRenderData(
 server.get(WidgetHelper.waitPath, WidgetHelper.serverWaiter);
 ```
 
-В пропсе WidgetHelper.wsModePath хранится адрес, на который будут указывать сссылки в режиме изолированного рендера.
+В пропсе WidgetHelper.wsModePath хранится адрес, на который будут указывать ссылки в режиме изолированного рендера.
 
 ```js
 server.get(WidgetHelper.wsModePath, async (req, res) => ...
@@ -157,7 +157,7 @@ server.get(WidgetHelper.wsModePath, async (req, res) => ...
 
 # TODO
 
-- [ ] добавить эпики
+- [x] добавить эпики
 
 - [ ] код widgetHelper ужасен
 - [ ] просмисы в getInitialState будут резолвиться только в корне объекта
