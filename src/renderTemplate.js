@@ -1,4 +1,4 @@
-export default ({ html = "", initialState = {} } = {}) =>
+export default ({ html = "", initialState = {}, entrypoints = {} } = {}) =>
   `
 <!doctype html>
 <html>
@@ -15,7 +15,9 @@ export default ({ html = "", initialState = {} } = {}) =>
         "\\u003c"
       )}
     </script>
-    <script src="/assets/bundle.js"></script>
+    ${(entrypoints.js || [])
+      .map((path) => `<script src="assets/${path}"></script>`)
+      .join("")}
   </body>
 </html>
 `;

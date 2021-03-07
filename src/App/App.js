@@ -1,14 +1,15 @@
 import React, { useEffect, useState } from "react";
-import FooWidget from "./FooWidget";
-import BarWidget from "./BarWidget";
-import KekWidget from "./KekWidget";
+import FooWidget from "widgets/FooWidget";
+import BarWidget from "widgets/BarWidget";
+import KekWidget from "widgets/KekWidget";
+// import UnusedWidget from "widgets/UnusedWidget";
 
 const AppBase = () => {
   const [Comps, setComp] = useState(null);
   useEffect(() => {
     setComp([
       <BarWidget name="bar-b" key="6" />,
-      <KekWidget name="kek-b" key="7" />,
+      <KekWidget name="kek-a" key="7" />,
       <KekWidget name="kek-b" key="8" />
     ]);
   }, []);
@@ -29,7 +30,7 @@ const AppBase = () => {
       резульат срезолвится на клиенте */}
       {Comps}
       {false ? <BarWidget name="bar-c" /> : null}
-      {false ? <KekWidget name="kek-a" /> : null}
+      {false ? <KekWidget name="kek-c" /> : null}
     </>
   );
 };

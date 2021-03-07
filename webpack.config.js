@@ -2,6 +2,7 @@
 
 const path = require("path");
 const nodeExternals = require("webpack-node-externals");
+const EntrypointsPlugin = require("./config/EntrypointsPlugin.js");
 
 module.exports = [
   {
@@ -35,15 +36,31 @@ module.exports = [
           ]
         }
       ]
+    },
+    resolve: {
+      alias: {
+        widgets: path.resolve(__dirname, "src/widgets/")
+      }
     }
   },
   {
     mode: "development",
-    entry: ["@babel/polyfill", "./src/client.js"],
+    entry: {
+      client: ["@babel/polyfill", "./src/client.js"]
+      // vendor: [
+      //   "react",
+      //   "react-dom",
+      //   "react-redux",
+      //   "redux",
+      //   "redux-devtools-extension",
+      //   "redux-observable",
+      //   "rxjs"
+      // ]
+    },
     output: {
       path: path.join(__dirname, "dist/assets"),
       publicPath: "/",
-      filename: "bundle.js"
+      filename: "[name].bundle.js"
     },
     module: {
       rules: [
@@ -59,7 +76,39 @@ module.exports = [
       ]
     },
     resolve: {
-      extensions: [".js", ".jsx"]
-    }
+      extensions: [".js", ".jsx"],
+      alias: {
+        widgets: path.resolve(__dirname, "src/widgets/")
+      }
+    },
+    optimization: {
+      splitChunks: {
+        chunks: "all",
+        cacheGroups: {
+          widget: {
+            name(module, chunks, cacheGroupKey) {
+              const moduleFileName = module
+                .identifier()
+                .split("/")
+                .reduceRight((item) => item);
+              return `${cacheGroupKey}-${moduleFileName}`;
+            },
+            chunks: "all",
+            minSize: 0,
+            minChunks: 1,
+            reuseExistingChunk: true,
+            priority: 10000,
+            enforce: true,
+            test: /[\\/]widgets[\\/]/
+          }
+        }
+      }
+    },
+    plugins: [
+      new EntrypointsPlugin({
+        filename: "entrypoints.json",
+        space: 2
+      })
+    ]
   }
 ];
