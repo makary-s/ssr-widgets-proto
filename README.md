@@ -98,6 +98,10 @@ const widgetId = useWidgetId()
 return <button onClick={() => dispatch(actionCreator(widgetId))}/>
 ```
 
+### Редьюсеры
+
+Экземпляры виджетов имеют раздельный стейт, и в их редьюсеры попадут только экшены, имеющий в meta соответствующий id виджета.
+
 ### Режим изолированного рендера виджета:
 
 Если добавить квери параметр `sw` то страница отрендерится с ссылками на изолированный просмотр виджетов.
@@ -117,6 +121,30 @@ combineReducers({ ...reducers, ...WidgetHelper.getReducers() });
 ```js
 combineEpics(...epics, WidgetHelper.getEpic());
 ```
+
+Для рендера приложения можно использовать `WidgetHelper.renderApp`. Он сам определит как стоит отрендерить приложения в зависимости от того, где запускается код (на клиенте или на сервере). Плюс автоматически будут подключены вейтеры стейта и возможность отображать виджеты в изолированном режиме.
+Так же этот подход необходимо использовать для эксперементальной версии.
+
+```js
+import { renderApp } from "widgetHelper";
+...
+export default renderApp({
+  // реакт приложение
+  App,
+  // функция принимающая начальный стейт и возвращающая стор
+  getStore,
+  // селектор корневого элемента
+  rootSelector: "#root",
+  // то что будет выполнено после подготовки рендера
+  after: () => {
+    runEpics();
+  }
+});
+```
+
+### Без `WidgetHelper.renderApp`
+
+Если мы не хотим использовать `WidgetHelper.renderApp`, то понадобится следующая подготовка.
 
 Наблюдаем за Server-Sent Events, которые обновят неблокирущие отрендеренные виджеты, стейт которых начал резолиться во время запроса к странице:
 
@@ -151,6 +179,22 @@ server.get(WidgetHelper.waitPath, WidgetHelper.serverWaiter);
 
 ```js
 server.get(WidgetHelper.wsModePath, async (req, res) => ...
+```
+
+### Для эксперементальной версии
+
+Импортируем серверную версию WidgetHelper:
+
+```js
+import WidgetHelper from "./widgetHelper/server";
+```
+
+Все остальное как описано выше, только в prepareRenderData указываем название бандла:
+
+```js
+const { html, initialState } = await WidgetHelper.prepareRenderData(
+  "assets/client.bundle.js"
+);
 ```
 
 # TODO

@@ -1,10 +1,13 @@
-import React, { useCallback, useMemo, useRef, useEffect } from "react";
+import React, { useCallback, useMemo, useRef } from "react";
+import { render, hydrate } from "react-dom";
 import { useSelector, useDispatch, Provider } from "react-redux";
 import { combineReducers } from "redux";
 import { renderToString } from "react-dom/server";
 import { combineEpics } from "redux-observable";
 import { map, mergeMap } from "rxjs/operators";
 import { of, EMPTY } from "rxjs";
+
+import { wsModePath, waitPath, serverWaiter } from "./shared";
 
 const getCompName = (comp) => comp.name || comp.displayName;
 
@@ -93,12 +96,13 @@ class WidgetHelper {
 
     // надо поедлить по запросам чтобы не пересекалось
     this.widetsStateClientPromises = {};
-    this.waitPath = "/init_widgets";
-    this.wsModePath = "/widget";
-    this.serverWaiter = this.serverWaiter.bind(this);
+    this.waitPath = waitPath;
+    this.wsModePath = wsModePath;
 
     this.temp = {};
     this.witgets = {};
+
+    this.serverWaiter = serverWaiter.bind(this);
   }
 
   getReducers() {
@@ -265,7 +269,11 @@ class WidgetHelper {
     // TODO разделить на запросы
     this.widetsStateClientPromises = widetsStateClientPromises;
 
-    return { html: finalHtml, initialState };
+    return {
+      html: finalHtml,
+      initialState,
+      promises: this.widetsStateClientPromises
+    };
   }
 
   create({
@@ -351,31 +359,6 @@ class WidgetHelper {
       store.dispatch({ type: "_INIT_WIDGET", payload: state, meta: { id } });
     };
   }
-
-  async serverWaiter(req, res) {
-    res.writeHead(200, {
-      "Content-Type": "text/event-stream",
-      "Cache-Control": "no-cache",
-      Connection: "keep-alive"
-    });
-
-    await Promise.all(
-      this.widetsStateClientPromises.map(async ({ id, initialState }) => {
-        const result = {};
-        await Promise.all(
-          Object.entries(initialState).map(async ([key, val]) => {
-            result[key] = await val;
-          })
-        ).then(() => {
-          res.write(`data: ${JSON.stringify({ id, state: result })}\n\n`);
-        });
-      })
-    );
-
-    res.write(`data: CLOSE\n\n`);
-
-    res.end();
-  }
 }
 
 const widgetHelper = new WidgetHelper();
@@ -408,4 +391,52 @@ export const useAction = (actionCreator, deps = []) => {
 
   // eslint-disable-next-line react-hooks/rules-of-hooks
   return useCallback(callback, [dispatch, ...deps]);
+};
+
+export const renderApp = ({
+  App,
+  getStore,
+  rootSelector = "#root",
+  after
+} = {}) => {
+  let f = async () => {};
+
+  if (checkIsClient()) {
+    const initialState = window.__INITIAL_STATE__;
+
+    const store = getStore(initialState);
+
+    widgetHelper.prepareClient(store);
+    after();
+
+    if (widgetHelper.wsModeComponent) {
+      render(
+        widgetHelper.wsModeComponent,
+        document.querySelector(rootSelector)
+      );
+    } else {
+      hydrate(
+        <App store={store} isClient={true} />,
+        document.querySelector(rootSelector)
+      );
+    }
+  } else {
+    f = async () => {
+      const store = getStore({});
+
+      const {
+        html,
+        initialState,
+        promises
+      } = await widgetHelper.prepareRenderData(
+        // TODO isClient не нужен
+        <App store={store} isClient={false} />,
+        store.getState()
+      );
+
+      return { html, initialState, promises };
+    };
+  }
+
+  return f;
 };

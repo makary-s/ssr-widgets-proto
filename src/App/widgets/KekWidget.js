@@ -1,6 +1,6 @@
 import React from "react";
-import WidgetHelper, { useAction } from "../widgetHelper";
-import { resolveRandomNumber } from "../resolvers";
+import WidgetHelper, { useAction } from "../../widgetHelper";
+import { resolveRandomNumber } from "../../resolvers";
 import { ofType } from "redux-observable";
 import { tap, mapTo, ignoreElements } from "rxjs/operators";
 import { of } from "rxjs";
@@ -12,7 +12,7 @@ import Placeholder from "./Placeholder";
 const CLICK = "CLICK";
 const NEW_VALUE = "NEW_VALUE";
 
-const addAction = () => ({
+const clickAction = () => ({
   type: CLICK
 });
 
@@ -61,11 +61,11 @@ const getInitialState = (props) => ({ num: resolveRandomNumber() });
 /////////////////////////////////////////////////
 
 const Kek = ({ num, name }) => {
-  const add = useAction(addAction);
+  const onClick = useAction(clickAction);
 
   return (
     <button
-      onClick={add}
+      onClick={onClick}
       style={{ background: "wheat" }}
     >{`${name}-${num}`}</button>
   );

@@ -1,6 +1,6 @@
 import React from "react";
-import WidgetHelper, { useAction } from "../widgetHelper";
-import { resolveRandomNumber } from "../resolvers";
+import WidgetHelper, { useAction } from "../../widgetHelper";
+import { resolveRandomNumber } from "../../resolvers";
 import Placeholder from "./Placeholder";
 
 /////////////////////////////////////////////////

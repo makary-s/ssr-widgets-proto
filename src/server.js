@@ -1,59 +1,34 @@
-import React from "react";
 import { join } from "path";
 import express from "express";
-import fs from "fs";
 import renderTemplate from "./renderTemplate";
-import App from "./App";
-import { getStore } from "./store";
-import WidgetHelper from "./widgetHelper";
+import WidgetHelper from "./widgetHelper/server";
 
 const server = express();
-
-const entrypoints = JSON.parse(
-  fs.readFileSync(join(__dirname, "assets/entrypoints.json"))
-);
 
 server.use("/assets", express.static(join(__dirname, "assets")));
 
 server.get("/", async (req, res) => {
-  const store = getStore({});
-
-  const { html, initialState } = await WidgetHelper.prepareRenderData(
-    // TODO isClient не нужен
-    <App store={store} isClient={false} />,
-    store.getState()
+  const { html, initialState } = await WidgetHelper.prepareApp(
+    "assets/client.bundle.js"
   );
 
-  // eslint-disable-next-line no-console
   console.log("Server initial state:\n", initialState);
-  console.log(
-    "Page widgets: ",
-    entrypoints.client.js
-      .map((x) => (x.match(/widget-(.*?)\.js/) || [])[1])
-      .filter(Boolean)
-  );
 
   res.send(
     renderTemplate({
       html,
-      initialState,
-      entrypoints: entrypoints.client
+      initialState
     })
   );
 });
 
 server.get(WidgetHelper.wsModePath, async (req, res) => {
-  res.send(
-    renderTemplate({
-      entrypoints: entrypoints.client
-    })
-  );
+  res.send(renderTemplate());
 });
 
 // вернет начальные стейты неблокирующих отрендеренных виджетов
 server.get(WidgetHelper.waitPath, WidgetHelper.serverWaiter);
 
 server.listen(8080, () => {
-  // eslint-disable-next-line no-console
   console.log("Listening on: http://localhost:8080");
 });
