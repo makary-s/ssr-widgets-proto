@@ -98,7 +98,7 @@ const widgetId = useWidgetId()
 return <button onClick={() => dispatch(actionCreator(widgetId))}/>
 ```
 
-### Редьюсеры
+### Редьюсеры:
 
 Экземпляры виджетов имеют раздельный стейт, и в их редьюсеры попадут только экшены, имеющий в meta соответствующий id виджета.
 
@@ -181,15 +181,15 @@ server.get(WidgetHelper.waitPath, WidgetHelper.serverWaiter);
 server.get(WidgetHelper.wsModePath, async (req, res) => ...
 ```
 
-#### Для эксперементальной версии
+#### Для эксперементальной версии:
 
-Импортируем серверную версию WidgetHelper:
+Импортируем серверную версию WidgetHelper.
 
 ```js
 import WidgetHelper from "./widgetHelper/server";
 ```
 
-Все остальное как описано выше, только в prepareRenderData указываем название бандла:
+Все остальное как описано выше, только в prepareRenderData указываем название бандла.
 
 ```js
 const { html, initialState } = await WidgetHelper.prepareRenderData(
