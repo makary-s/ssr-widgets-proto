@@ -1,8 +1,8 @@
 import React, { useEffect, useState } from "react";
-import FooWidget from "widgets/FooWidget";
-import BarWidget from "widgets/BarWidget";
-import KekWidget from "widgets/KekWidget";
-// import UnusedWidget from "widgets/UnusedWidget";
+import FooWidget from "./widgets/FooWidget";
+import BarWidget from "./widgets/BarWidget";
+import KekWidget from "./widgets/KekWidget";
+// import UnusedWidget from "./widgets/UnusedWidget";
 
 const AppBase = () => {
   const [Comps, setComp] = useState(null);

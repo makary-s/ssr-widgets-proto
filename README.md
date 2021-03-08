@@ -142,7 +142,7 @@ export default renderApp({
 });
 ```
 
-### Без `WidgetHelper.renderApp`
+#### Без `WidgetHelper.renderApp`
 
 Если мы не хотим использовать `WidgetHelper.renderApp`, то понадобится следующая подготовка.
 
@@ -181,7 +181,7 @@ server.get(WidgetHelper.waitPath, WidgetHelper.serverWaiter);
 server.get(WidgetHelper.wsModePath, async (req, res) => ...
 ```
 
-### Для эксперементальной версии
+#### Для эксперементальной версии
 
 Импортируем серверную версию WidgetHelper:
 
